@@ -2,11 +2,13 @@ package com.kotlin.coroutineproject
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -21,9 +23,19 @@ class MainActivity : AppCompatActivity() {
 
         // Coroutine Builder
         // Global Scope Coroutine survive the entire life of the application
-        val j : Job = GlobalScope.launch {
-            delay(3000)
-            println("Thread name: ${Thread.currentThread().name}")
+        val j : Job = GlobalScope.launch(Dispatchers.Default) {
+
+            try {
+                println("Thread name: ${Thread.currentThread().name}")
+                for(i in 1..50){
+                    delay(3000)
+                    println("$i")
+                }
+            } catch (ex: CancellationException) {
+                println(ex.message)
+            } finally {
+                println("In final block")
+            }
         }
 
         runBlocking {
@@ -35,7 +47,17 @@ class MainActivity : AppCompatActivity() {
 
 //            delay() is a suspend function that will suspend the coroutine without blocking the thread
 //            Other coroutines on the same thread will continue working
-            j.join()
+
+            // If the coroutine is cooperative then cancel it
+            j.cancel(CancellationException("I am the error"))
+
+            // waits for the coroutine to finish
+//            j.join()
+
+            // If the coroutine is cooperative then cancel it else,
+            // if it is not cooperative then wait for the coroutine to finish
+//            j.cancelAndJoin()
+
             println("Thread in run blocking: ${Thread.currentThread().name}")
         }
 
