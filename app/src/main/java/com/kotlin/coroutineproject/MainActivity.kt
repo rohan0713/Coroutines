@@ -7,6 +7,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -28,13 +29,18 @@ class MainActivity : AppCompatActivity() {
             try {
                 println("Thread name: ${Thread.currentThread().name}")
                 for(i in 1..50){
+                    // Cancellable suspending functions such as yield(), delay() etc
+                    // throw Cancellation Exception on coroutine cancellation
                     delay(3000)
                     println("$i")
                 }
             } catch (ex: CancellationException) {
                 println(ex.message)
             } finally {
-                println("In final block")
+                // Execute a suspending function from a finally block then wrap the code within withContext function
+                withContext(NonCancellable){
+                    println("In final block")
+                }
             }
         }
 
@@ -49,6 +55,7 @@ class MainActivity : AppCompatActivity() {
 //            Other coroutines on the same thread will continue working
 
             // If the coroutine is cooperative then cancel it
+            // Print your own cancellation message
             j.cancel(CancellationException("I am the error"))
 
             // waits for the coroutine to finish
